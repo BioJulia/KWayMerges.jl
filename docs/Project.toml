@@ -1,0 +1,9 @@
+[deps]
+KWayMerges = "f29e91c7-719d-4dbc-8870-0ce36bf055b7"
+Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
+
+[compat]
+Documenter = "1"
+
+[sources]
+KWayMerges = {path = ".."}
