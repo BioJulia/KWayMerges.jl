@@ -1,16 +1,14 @@
 name = "KWayMerges"
 uuid = "f29e91c7-719d-4dbc-8870-0ce36bf055b7"
-authors = ["Jakob Nybo Nissen <jakobnybonissen@gmail.com>"]
 version = "0.1.0"
+authors = ["Jakob Nybo Nissen <jakobnybonissen@gmail.com>"]
 
-[deps]
+[compat]
+Test = "1.11"
+julia = "1.11"
 
 [extras]
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
-
-[compat]
-Test = "1.10"
-julia = "1.10"
 
 [targets]
 test = ["Test"]

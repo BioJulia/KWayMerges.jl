@@ -7,10 +7,17 @@
 
 Implementation of k-way merge.
 
-This package implements `kway_merge(x::AbstractVector{<:AbstractVector})`, which returns a `KWayMerger`.
-This type is a lazy iterator of the elements in the inner vectors. If the inner vectors are sorted, the output of the `KWayMerger` is also guaranteed to be sorted.
+This package implements the `KWayMerger` type.
+It is a stateful, lazy iterator of the elements in an iterator of iterators, similar to `Iterators.flatten`. However, the elements of the inner iterators will be yielded in an order given by a predicate optionally passed to `KWayMerger` (default: `isless`).
+If the inner iterators are sorted by the predicate, the output of the `KWayMerger` is also guaranteed to be sorted.
 
-The function `peek` can be used to check the next element without advancing the iterator. 
+The primary purpose of `KWayMerger` is to efficiently merge N sorted iterables into one sorted stream.
+
+The function `peek` can be used to check the next element without advancing the iterator.
+
+## Documentation
+This package's two public functions are the `KWayMerger` constructor, and its `Base.peek` method.
+See their docstrings for more details.
 
 ## Contributing
 We appreciate contributions from users including reporting bugs, fixing
