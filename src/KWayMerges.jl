@@ -59,9 +59,6 @@ struct KWayMerger{T, I, F, S}
     heap::Vector{Tuple{Int, T}}
 end
 
-ord(x::KWayMerger) = ord(x.f)
-ord(f) = (i, j) -> f(last(i), last(j))
-
 function KWayMerger{T, I, F}(f::F, iterators) where {T, I, F}
     iters = vec(collect(iterators))
     states = nothing
@@ -76,7 +73,7 @@ function KWayMerger{T, I, F}(f::F, iterators) where {T, I, F}
         push!(things, (i, thing))
         states[i] = state
     end
-    heapify!(ord(f), things)
+    heapify!(f, things)
     states = if isnothing(states)
         Vector{Union{}}(undef, length(iters))
     else
@@ -109,11 +106,11 @@ function Base.iterate(x::KWayMerger, ::Nothing = nothing)
     state = @inbounds x.states[i]
     it = iterate(iterator, state)
     if it === nothing
-        @inbounds heappop!(ord(x.f), x.heap)
+        @inbounds heappop!(x.f, x.heap)
     else
         (new_item, new_state) = it
         @inbounds x.states[i] = new_state
-        @inbounds heapreplace!(ord(x.f), x.heap, (i, new_item))
+        @inbounds heapreplace!(x.f, x.heap, (i, new_item))
     end
     return ((i, item), nothing)
 end
