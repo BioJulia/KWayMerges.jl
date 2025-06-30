@@ -1,8 +1,8 @@
-# <img src="./sticker.svg" width="30%" align="right" /> KWayMergers.jl
+# <img src="./sticker.svg" width="30%" align="right" /> KWayMerges.jl
 
-[![Latest Release](https://img.shields.io/github/release/BioJulia/KWayMergers.jl.svg)](https://github.com/BioJulia/KWayMergers.jl/releases/latest)
-[![MIT license](https://img.shields.io/badge/license-MIT-green.svg)](https://github.com/BioJulia/KWayMergers.jl/blob/master/LICENSE)
-[![](https://codecov.io/gh/BioJulia/KWayMergers.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/BioJulia/KWayMergers.jl)
+[![Latest Release](https://img.shields.io/github/release/BioJulia/KWayMerges.jl.svg)](https://github.com/BioJulia/KWayMerges.jl/releases/latest)
+[![MIT license](https://img.shields.io/badge/license-MIT-green.svg)](https://github.com/BioJulia/KWayMerges.jl/blob/master/LICENSE)
+[![](https://codecov.io/gh/BioJulia/KWayMerges.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/BioJulia/KWayMerges.jl)
 
 Implementation of k-way merge.
 
