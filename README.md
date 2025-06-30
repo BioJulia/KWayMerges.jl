@@ -33,7 +33,10 @@ julia> it = KWayMerger([1]);
 julia> peek(it)
 (1, 1)
 
-julia> iterate(it); peek(it) === nothing
+julia> first(it)
+(1, 1)
+
+julia> peek(it) === nothing
 true
 ```
 
@@ -48,6 +51,7 @@ When merging I iterables with a total length of N:
 
 Therefore, merging I sorted iterables with N total elements using a KWayMerger therefore takes O(N * log(I)) time.
 It is generally faster than flattening the iterators and sorting, when I << N.
+Note that Julia uses radix sort for integers, which sorts in O(N), and therefore usually beats a k-way merge.
 
 ## Contributing
 We appreciate contributions from users including reporting bugs, fixing
