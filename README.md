@@ -2,7 +2,6 @@
 
 [![Latest Release](https://img.shields.io/github/release/BioJulia/KWayMergers.jl.svg)](https://github.com/BioJulia/KWayMergers.jl/releases/latest)
 [![MIT license](https://img.shields.io/badge/license-MIT-green.svg)](https://github.com/BioJulia/KWayMergers.jl/blob/master/LICENSE)
-[![Documentation](https://img.shields.io/badge/docs-dev-blue.svg)](https://biojulia.github.io/KWayMergers.jl/dev)
 [![](https://codecov.io/gh/BioJulia/KWayMergers.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/BioJulia/KWayMergers.jl)
 
 Implementation of k-way merge.
