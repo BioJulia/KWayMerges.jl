@@ -3,6 +3,8 @@ module KWayMergesTest
 using KWayMerges
 using Test
 
+imap(f) = xs -> Iterators.map(f, xs)
+
 @testset "Construction" begin
     v = [1:3, 4:6, 9:11]
 
@@ -15,11 +17,13 @@ using Test
     @test KWayMerger(<, v) isa KWayMerger{Int, UnitRange{Int}, typeof(<)}
 end
 
-function manual_collect(it; lt=isless, by=identity)
+function manual_collect(it; lt = isless, by = identity)
     v = Iterators.map(enumerate(it)) do (i, inner_it)
         zip(Iterators.repeated(i), inner_it)
-    end |> Iterators.flatten |> collect
-    sort!(v; by = i -> by(last(i)), lt)
+    end |> Iterators.flatten |> imap() do (i, v)
+        (; from_iter = i, value = v)
+    end |> collect
+    return sort!(v; by = i -> by(last(i)), lt)
 end
 
 @testset "Forward sorting" begin
@@ -31,7 +35,7 @@ end
 @testset "Using a predicate" begin
     v = [["de", "abc"], [""], ["xysa", "dsakljdwe"]]
 
-    r = manual_collect(v; by=length)
+    r = manual_collect(v; by = length)
 
     @test collect(KWayMerger((i, j) -> isless(length(i), length(j)), v)) == r
 end
@@ -54,7 +58,7 @@ end
     it = KWayMerger([1:0, 11:10])
     @test it isa KWayMerger{Int, UnitRange{Int}, typeof(isless)}
     @test collect(it) == Tuple{Int, Int}[]
-    @test typeof(collect(it)) == Vector{Tuple{Int, Int}}
+    @test typeof(collect(it)) == Vector{@NamedTuple{from_iter::Int, value::Int}}
 end
 
 end # module KWayMergesTest

@@ -13,9 +13,10 @@ include("heap.jl")
 Create a stateful iterator which does a k-way merge between multiple
 iterators of the same type.
 
-This iterator yields `(index::Int, x::T)` elements, where `x` is the next element from
-one of the iterators, and `index` is the 1-based index of the iterator that yielded `x`.
-The elements `x` are chosen from among the iterators such that, among all elements which
+This iterator yields `@NamedTuple{from_iter::Int, value::T}` elements, where `value` is the
+next element from one of the iterators, and `from_iter` is the 1-based index of the iterator
+that yielded `value`.
+The element `value` are chosenis from among the iterators such that, among all elements which
 are the next element of the iterators, the element is chosen which is the smallest
 according to the predicate `f::F`, which defaults to `isless`.
 
@@ -30,8 +31,13 @@ julia> arrs = [[1,6], [2], [5,7], [3,4,8]];
 
 julia> it = KWayMerger(arrs);
 
-julia> print(collect(it))
-[(1, 1), (2, 2), (4, 3), (4, 4), (3, 5), (1, 6), (3, 7), (4, 8)]
+julia> first(it, 2)
+2-element Vector{@NamedTuple{from_iter::Int64, value::Int64}}:
+ (from_iter = 1, value = 1)
+ (from_iter = 2, value = 2)
+
+julia> print(map(Tuple, it))
+[(4, 3), (4, 4), (3, 5), (1, 6), (3, 7), (4, 8)]
 ```
 
 # Extended help
@@ -56,21 +62,21 @@ struct KWayMerger{T, I, F, S}
     f::F
     iterators::Vector{I}
     states::Vector{S}
-    heap::Vector{Tuple{Int, T}}
+    heap::Vector{@NamedTuple{from_iter::Int, value::T}}
 end
 
 function KWayMerger{T, I, F}(f::F, iterators) where {T, I, F}
     iters = vec(collect(iterators))
     states = nothing
-    things = Tuple{Int, T}[]
+    things = @NamedTuple{from_iter::Int, value::T}[]
     for i in eachindex(iters)
         it = iterate(iters[i])
         isnothing(it) && continue
-        (thing::T, state) = it
+        (value::T, state) = it
         if isnothing(states)
             states = Vector{typeof(state)}(undef, length(iters))
         end
-        push!(things, (i, thing))
+        push!(things, (; from_iter = i, value))
         states[i] = state
     end
     heapify!(f, things)
@@ -97,29 +103,29 @@ end
 # We could technically know this, but KWayMerger is stateful, and
 # Julia's iterator length works badly with stateful iterators.
 Base.IteratorSize(::Type{<:KWayMerger}) = Base.SizeUnknown()
-Base.eltype(::Type{<:KWayMerger{T}}) where {T} = Tuple{Int, T}
+Base.eltype(::Type{<:KWayMerger{T}}) where {T} = @NamedTuple{from_iter::Int, value::T}
 
 function Base.iterate(x::KWayMerger, ::Nothing = nothing)
     isempty(x.heap) && return nothing
-    (i, item) = @inbounds x.heap[1]
-    iterator = @inbounds x.iterators[i]
-    state = @inbounds x.states[i]
+    top = @inbounds x.heap[1]
+    iterator = @inbounds x.iterators[top.from_iter]
+    state = @inbounds x.states[top.from_iter]
     it = iterate(iterator, state)
     if it === nothing
         @inbounds heappop!(x.f, x.heap)
     else
         (new_item, new_state) = it
-        @inbounds x.states[i] = new_state
-        @inbounds heapreplace!(x.f, x.heap, (i, new_item))
+        @inbounds x.states[top.from_iter] = new_state
+        @inbounds heapreplace!(x.f, x.heap, (; from_iter = top.from_iter, value = new_item))
     end
-    return ((i, item), nothing)
+    return (top, nothing)
 end
 
 Base.isempty(x::KWayMerger) = isempty(x.heap)
 Base.isdone(x::KWayMerger) = isempty(x.heap)
 
 """
-    peek(x::KWayMerger{T})::Union{Tuple{Int, T}, Nothing}
+    peek(x::KWayMerger{T})::Union{@NamedTuple{from_iter::Int, value::T}, Nothing}
 
 Get the first element of `x` without advancing the iterator, or `nothing` if the
 iterator is empty.
@@ -129,7 +135,7 @@ iterator is empty.
 julia> it = KWayMerger([[3, 4], [2, 7]]);
 
 julia> peek(it)
-(2, 2)
+(from_iter = 2, value = 2)
 
 julia> collect(it); # exhaust stateful iterator
 

@@ -1,6 +1,6 @@
 name = "KWayMerges"
 uuid = "f29e91c7-719d-4dbc-8870-0ce36bf055b7"
-version = "0.1.0"
+version = "0.2.0"
 authors = ["Jakob Nybo Nissen <jakobnybonissen@gmail.com>"]
 
 [compat]
