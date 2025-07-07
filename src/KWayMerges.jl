@@ -3,7 +3,10 @@ module KWayMerges
 using Base.Order: Ordering, Forward, ord, lt
 
 export kway_merge
-public KWayMerger
+
+@static if VERSION >= v"1.11.0"
+    eval(Meta.parse("public KWayMerger"))
+end
 
 include("heap.jl")
 
