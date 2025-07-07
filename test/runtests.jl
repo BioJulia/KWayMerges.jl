@@ -8,13 +8,13 @@ imap(f) = xs -> Iterators.map(f, xs)
 @testset "Construction" begin
     v = [1:3, 4:6, 9:11]
 
-    T = KWayMerger{Int, UnitRange{Int}, typeof(isless), Int}
+    T = KWayMerges.KWayMerger{Int, UnitRange{Int}, Base.Order.ForwardOrdering}
 
-    @test KWayMerger{Int, UnitRange{Int}, typeof(isless)}(isless, v) isa T
-    @test KWayMerger{Int, UnitRange{Int}}(v) isa T
-    @test KWayMerger(v) isa T
-    @test KWayMerger(isless, v) isa T
-    @test KWayMerger(<, v) isa KWayMerger{Int, UnitRange{Int}, typeof(<)}
+    @test kway_merge(Int, UnitRange{Int}, v; lt = isless) isa T
+    @test kway_merge(Int, UnitRange{Int}, v; rev = false) isa T
+    @test kway_merge(v) isa T
+    @test kway_merge(v; by = identity, lt = isless) isa T
+    @test kway_merge(v; lt = <) isa KWayMerges.KWayMerger{Int, UnitRange{Int}}
 end
 
 function manual_collect(it; lt = isless, by = identity)
@@ -29,7 +29,7 @@ end
 @testset "Forward sorting" begin
     v = [[3, 5, 8], [1, 1], [10, 11], [1, 2, 7], Int[]]
 
-    @test collect(KWayMerger(v)) == manual_collect(v)
+    @test collect(kway_merge(v)) == manual_collect(v)
 end
 
 @testset "Using a predicate" begin
@@ -37,7 +37,7 @@ end
 
     r = manual_collect(v; by = length)
 
-    @test collect(KWayMerger((i, j) -> isless(length(i), length(j)), v)) == r
+    @test collect(kway_merge(v; rev = false, by = length)) == r
 end
 
 @testset "Reverse sorting" begin
@@ -47,16 +47,16 @@ end
     end
     r = manual_collect(v; lt = >)
 
-    @test collect(KWayMerger((i, j) -> isless(j, i), v)) == r
+    @test collect(kway_merge(v; order = Base.Order.Reverse)) == r
 end
 
 @testset "Some edge cases" begin
-    it = KWayMerger([])
-    @test it isa (KWayMerger{T, I, typeof(isless)} where {T, I})
+    it = kway_merge([])
+    @test it isa (KWayMerges.KWayMerger{T, I, Base.Order.ForwardOrdering} where {T, I})
     @test collect(it) == Any[]
 
-    it = KWayMerger([1:0, 11:10])
-    @test it isa KWayMerger{Int, UnitRange{Int}, typeof(isless)}
+    it = kway_merge([1:0, 11:10])
+    @test it isa KWayMerges.KWayMerger{Int, UnitRange{Int}, Base.Order.ForwardOrdering}
     @test collect(it) == Tuple{Int, Int}[]
     @test typeof(collect(it)) == Vector{@NamedTuple{from_iter::Int, value::Int}}
 end

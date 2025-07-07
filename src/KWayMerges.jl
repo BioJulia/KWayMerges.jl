@@ -1,14 +1,41 @@
 module KWayMerges
 
-export KWayMerger
+using Base.Order: Ordering, Forward, ord, lt
+
+export kway_merge
+public KWayMerger
 
 include("heap.jl")
 
 """
-    KWayMerger{T, I, F}(f::F, iterators)
-    KWayMerger{T, I}(iterators)
-    KWayMerger(f, iterators)
-    KWayMerger(iterators)
+    KWayMerger{T, I, O, S}
+
+Stateful iterator of a k-way merge of multiple iterators of the same type.
+Constructed using [`kway_merge`](@ref).
+
+The type parameters are:
+* `T`: Element type of iterators
+* `I`: Iterator type
+* `O`: Ordering, subtype of `Base.Ordering`
+* `S`: Type of state of iterators
+"""
+struct KWayMerger{T, I, O <: Base.Ordering, S}
+    ordering::O
+    iterators::Vector{I}
+    states::Vector{S}
+    heap::Vector{@NamedTuple{from_iter::Int, value::T}}
+end
+
+"""
+    kway_merge( 
+        iterators;
+        lt=isless,
+        by=identity,
+        rev::Bool=false,
+        order::Base.Order.Ordering=Base.Order.Forward
+    )
+    kway_merge(::Type{T}, ::Type{T}, iterators; kwargs...)
+    kway_merge(::Type{T}, ::Type{T}, ordering::Ordering, iterators)
 
 Create a stateful iterator which does a k-way merge between multiple
 iterators of the same type.
@@ -16,14 +43,16 @@ iterators of the same type.
 This iterator yields `@NamedTuple{from_iter::Int, value::T}` elements, where `value` is the
 next element from one of the iterators, and `from_iter` is the 1-based index of the iterator
 that yielded `value`.
-The element `value` are chosenis from among the iterators such that, among all elements which
-are the next element of the iterators, the element is chosen which is the smallest
-according to the predicate `f::F`, which defaults to `isless`.
-
-This implies that if all iterators are sorted by `f`, the yielded will be in sorted
-order.
+The element `value` is chosen among the iterators such that, among all elements which
+are the next element of the iterators, the element is chosen which is the first
+according to the ordering.
+This implies that if all iterators are sorted by `f`, the yielded will be in sorted order.
 Hence, a `KWayMerger` is typically used to combined multiple sorted arrays
 into one sorted array.
+
+The ordering is given by the keywords `by`, `lt`, `rev` and `order` - these are the
+same as for `Base.sort!`.
+
 
 # Examples
 ```jldoctest
@@ -41,13 +70,6 @@ julia> print(map(Tuple, it))
 ```
 
 # Extended help
-The type parameters are:
-* `F`: Type of function used to compare the elements. It defaults
-  to `typeof(Base.isless)`
-* `T`: Element type of iterators
-* `I`: Iterator type
-* `S`: Type of state of iterators
-
 All iterators must be of the same type. For the constructors which don't pass
 in `T` and `I` explicitly, `Base.eltype` is used
 to determine them; since its default implementation
@@ -55,17 +77,10 @@ returns `Any`, explicitly passing them may be needed for good performance for so
 iterators.
 
 `S` is derived automatically, but this must be a fixed type;
-iterators that use states of multiple different types may
-not be supported by `KWayMerger`.
+iterators that use states of multiple different types during iteration may
+not be supported.
 """
-struct KWayMerger{T, I, F, S}
-    f::F
-    iterators::Vector{I}
-    states::Vector{S}
-    heap::Vector{@NamedTuple{from_iter::Int, value::T}}
-end
-
-function KWayMerger{T, I, F}(f::F, iterators) where {T, I, F}
+function kway_merge(::Type{T}, ::Type{I}, ordering::O, iterators) where {T, I, O}
     iters = vec(collect(iterators))
     states = nothing
     things = @NamedTuple{from_iter::Int, value::T}[]
@@ -79,25 +94,32 @@ function KWayMerger{T, I, F}(f::F, iterators) where {T, I, F}
         push!(things, (; from_iter = i, value))
         states[i] = state
     end
-    heapify!(f, things)
+    heapify!(ordering, things)
     states = if isnothing(states)
         Vector{Union{}}(undef, length(iters))
     else
         states
     end
-    return KWayMerger{T, I, F, eltype(states)}(f, iters, states, things)
+    return KWayMerger{T, I, O, eltype(states)}(ordering, iters, states, things)
 end
 
-function KWayMerger{T, I}(iterators) where {T, I}
-    return KWayMerger{T, I, typeof(isless)}(isless, iterators)
+function kway_merge(
+        ::Type{T},
+        ::Type{I},
+        iterators;
+        lt = isless,
+        by = identity,
+        rev::Bool = false,
+        order::Base.Ordering = Forward,
+    ) where {T, I}
+    ordering = ord(lt, by, rev, order)
+    return kway_merge(T, I, ordering, iterators)
 end
 
-KWayMerger(iterators) = KWayMerger(isless, iterators)
-
-function KWayMerger(f::F, iterators) where {F}
+function kway_merge(iterators; kwargs...)
     I = eltype(typeof(iterators))
     T = eltype(I)
-    return KWayMerger{T, I, F}(f, iterators)
+    return kway_merge(T, I, iterators; kwargs...)
 end
 
 # We could technically know this, but KWayMerger is stateful, and
@@ -112,11 +134,15 @@ function Base.iterate(x::KWayMerger, ::Nothing = nothing)
     state = @inbounds x.states[top.from_iter]
     it = iterate(iterator, state)
     if it === nothing
-        @inbounds heappop!(x.f, x.heap)
+        @inbounds heappop!(x.ordering, x.heap)
     else
         (new_item, new_state) = it
         @inbounds x.states[top.from_iter] = new_state
-        @inbounds heapreplace!(x.f, x.heap, (; from_iter = top.from_iter, value = new_item))
+        @inbounds heapreplace!(
+            x.ordering,
+            x.heap,
+            (; from_iter = top.from_iter, value = new_item)
+        )
     end
     return (top, nothing)
 end
