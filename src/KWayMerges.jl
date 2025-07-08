@@ -61,7 +61,7 @@ same as for `Base.sort!`.
 ```jldoctest
 julia> arrs = [[1,6], [2], [5,7], [3,4,8]];
 
-julia> it = KWayMerger(arrs);
+julia> it = kway_merge(arrs);
 
 julia> first(it, 2)
 2-element Vector{@NamedTuple{from_iter::Int64, value::Int64}}:
@@ -161,7 +161,7 @@ iterator is empty.
 
 # Examples
 ```jldoctest
-julia> it = KWayMerger([[3, 4], [2, 7]]);
+julia> it = kway_merge([[3, 4], [2, 7]]);
 
 julia> peek(it)
 (from_iter = 2, value = 2)
